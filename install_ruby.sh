@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/local/bin/bash
 
 set -ex
 
@@ -46,19 +46,19 @@ esac
 
 case $RUBY_VERSION in
   2.3.*)
-    # Need to down grade openssl to 1.0.x for Ruby 2.3.x
-    apt-get install -y --no-install-recommends libssl1.0-dev
+    # Need to down grade openssl to 1.1.x for Ruby 2.3.x
+    pkg install -y openssl111
     ;;
 esac
 
 if test -n "$RUBY_MASTER_COMMIT"; then
-  if test -f /usr/src/ruby/configure.ac; then
-    cd /usr/src/ruby
+  if test -f /usr/local/src/ruby/configure.ac; then
+    cd /usr/local/src/ruby
     git pull --rebase origin
   else
-    rm -r /usr/src/ruby
-    git clone https://github.com/ruby/ruby.git /usr/src/ruby
-    cd /usr/src/ruby
+    rm -r /usr/local/src/ruby
+    git clone https://github.com/ruby/ruby.git /usr/local/src/ruby
+    cd /usr/local/src/ruby
   fi
   git checkout $RUBY_MASTER_COMMIT
 else
@@ -67,13 +67,13 @@ else
   fi
   wget -O ruby.tar.xz $RUBY_DOWNLOAD_URI
   echo "$RUBY_DOWNLOAD_SHA256 *ruby.tar.xz" | sha256sum -c -
-  mkdir -p /usr/src/ruby
-  tar -xJf ruby.tar.xz -C /usr/src/ruby --strip-components=1
+  mkdir -p /usr/local/src/ruby
+  tar -xJf ruby.tar.xz -C /usr/local/src/ruby --strip-components=1
   rm ruby.tar.xz
 fi
 
 (
-  cd /usr/src/ruby
+  cd /usr/local/src/ruby
 
   if test ! -x ./configure; then
     if test -x ./autogen.sh; then
@@ -86,9 +86,7 @@ fi
   mkdir -p /tmp/ruby-build
   pushd /tmp/ruby-build
 
-  gnuArch=$(dpkg-architecture --query DEB_BUILD_GNU_TYPE)
   configure_args=( \
-    --build="$gnuArch" \
     --prefix="$PREFIX" \
     --disable-install-doc \
     --enable-shared \
@@ -113,7 +111,7 @@ fi
     unset debugflags
   fi
 
-  /usr/src/ruby/configure "${configure_args[@]}" || {
+  /usr/local/src/ruby/configure "${configure_args[@]}" || {
     cat config.log | grep flags=
     exit 1
   }
@@ -125,7 +123,7 @@ fi
   rm -rf /tmp/ruby-build
 )
 
-rm -fr /usr/src/ruby /root/.gem/
+rm -fr /usr/local/src/ruby /root/.gem/
 
 # rough smoke test
 export PATH=$PREFIX/bin:$PATH

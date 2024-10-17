@@ -1,4 +1,4 @@
-LATEST_UBUNTU_VERSION = "jammy"
+LATEST_FREEBSD_VERSION = "15.0"
 
 def download(url)
   require "net/http"
@@ -18,11 +18,11 @@ def download(url)
   end
 end
 
-def default_ubuntu_version(ruby_version)
+def default_freebsd_version(ruby_version)
   if ruby_version < "3.1"
-    "focal"
+    "14.2"
   else
-    "jammy"
+    "14.2"
   end
 end
 
@@ -30,12 +30,12 @@ def default_ruby_version
   ENV['ruby_version'] || '3.3.0'
 end
 
-def ubuntu_version(ruby_version)
-  ENV.fetch("ubuntu_version", default_ubuntu_version(ruby_version))
+def freebsd_version(ruby_version)
+  ENV.fetch("freebsd_version", default_freebsd_version(ruby_version))
 end
 
-def ubuntu_latest_version?(ubuntu_version)
-  LATEST_UBUNTU_VERSION == ubuntu_version
+def freebsd_latest_version?(freebsd_version)
+  LATEST_FREEBSD_VERSION == freebsd_version
 end
 
 @ruby_versions = nil
@@ -72,7 +72,7 @@ def ruby_latest_version?(version)
   if ENV.fetch("latest_tag", "false") == "false"
     false
   else
-    if not ubuntu_latest_version?(ubuntu_version(version))
+    if not freebsd_latest_version?(freebsd_version(version))
       false
     else
       version == ruby_latest_stable_version
@@ -122,7 +122,7 @@ end
 
 namespace :docker do
   def registry_name
-    ENV.fetch("registry_name", "rubylang")
+    ENV.fetch("registry_name", "ghcr.io/labtec")
   end
 
   def docker_image_name
@@ -164,7 +164,7 @@ namespace :docker do
       tags = ["#{ruby_version}#{version_suffix}"]
       tags << "#{ruby_version_mm}#{version_suffix}" if ruby_latest_full_version?(ruby_version)
     end
-    tags.collect! {|t| "#{docker_image_name}:#{t}-#{ubuntu_version(ruby_version)}#{tag_suffix}" }
+    tags.collect! {|t| "#{docker_image_name}:#{t}-#{freebsd_version(ruby_version)}#{tag_suffix}" }
     tags.push "#{docker_image_name}:latest" if ruby_latest_version?(ruby_version)
     return ruby_version, tags
   end
@@ -195,12 +195,15 @@ namespace :docker do
 
     build_args = [
       "RUBY_VERSION=#{ruby_version}",
-      "BASE_IMAGE_TAG=#{ubuntu_version(ruby_version)}"
+      "BASE_IMAGE_TAG=#{freebsd_version(ruby_version)}"
     ]
     if ruby_version.start_with?("master:")
       commit_hash = ruby_version.split(":")[1]
       version_info = get_ruby_version_at_commit(commit_hash)
-      ruby_so_suffix = version_info.values_at(:MAJOR, :MINOR, :TEENY).join(".")
+      ruby_so_suffix = version_info.values_at(:MAJOR, :MINOR).join
+      build_args << "RUBY_SO_SUFFIX=#{ruby_so_suffix}"
+    else
+      ruby_so_suffix = ruby_version.split('.')[0,2].join
       build_args << "RUBY_SO_SUFFIX=#{ruby_so_suffix}"
     end
     %w(cppflags optflags).each do |name|
@@ -238,7 +241,7 @@ namespace :docker do
 
     tags.each do |tag|
       if ENV['registry_name'].start_with?('ghcr.io')
-        docker_tag = "rubylang/#{tag.split("/").last}"
+        docker_tag = "ghcr.io/labtec/#{tag.split("/").last}"
         sh 'docker', 'tag', docker_tag, tag
       end
       sh 'docker', 'push', tag
@@ -246,7 +249,7 @@ namespace :docker do
 
     each_nightly_tag(ruby_version, tags) do |_, tag|
       if ENV['registry_name'].start_with?('ghcr.io')
-        docker_tag = "rubylang/#{tag.split("/").last}"
+        docker_tag = "ghcr.io/labtec/#{tag.split("/").last}"
         sh 'docker', 'tag', docker_tag, tag
       end
       sh 'docker', 'push', tag

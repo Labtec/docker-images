@@ -10,7 +10,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [noble, jammy, focal]
+        os: ["15.0", "14.2"]
         debug: ['', '-debug']
         dev: ['', '-dev']
 
@@ -19,7 +19,7 @@ jobs:
     env:
       nightly: true
       push: true
-      ubuntu_version: ${{ matrix.os }}
+      freebsd_version: ${{ matrix.os }}
       ruby_version: master
       image_version_suffix: ${{ matrix.debug }}
       tag_suffix: ''
@@ -59,7 +59,7 @@ jobs:
     - name: Build docker image
       run: |-
         rake docker:build ruby_version=${{ env.ruby_version }} \
-                          ubuntu_version=${{ env.ubuntu_version }} \
+                          freebsd_version=${{ env.freebsd_version }} \
                           image_version_suffix=${{ env.image_version_suffix }}${{ env.dev_suffix }} \
                           nightly=${{ env.nightly }} \
                           tag_suffix=${{ env.tag_suffix }} \
@@ -72,37 +72,25 @@ jobs:
       run: docker images
       shell: bash
 
-    - name: Push docker image to rubylang
+    - name: Push docker image to ghcr.io
       if: ${{ env.push }}
       run: |-
         rake docker:push ruby_version=${{ env.ruby_version }} \
-                         ubuntu_version=${{ env.ubuntu_version }} \
+                         freebsd_version=${{ env.freebsd_version }} \
                          image_version_suffix=${{ env.image_version_suffix }}${{ env.dev_suffix }} \
                          nightly=${{ env.nightly }} \
                          tag_suffix=${{ env.tag_suffix }} \
                          latest_tag=false \
-                         registry_name=rubylang
+                         registry_name=ghcr.io/labtec
       shell: bash
 
-    - name: Push docker image to ghcr.io/ruby
-      if: ${{ env.push }}
+    - name: Push the same image without the FreeBSD version
+      if: matrix.os == 'latest'
       run: |-
-        rake docker:push ruby_version=${{ env.ruby_version }} \
-                         ubuntu_version=${{ env.ubuntu_version }} \
-                         image_version_suffix=${{ env.image_version_suffix }}${{ env.dev_suffix }} \
-                         nightly=${{ env.nightly }} \
-                         tag_suffix=${{ env.tag_suffix }} \
-                         latest_tag=false \
-                         registry_name=ghcr.io/ruby
-      shell: bash
-
-    - name: Push the same image without the ubuntu version
-      if: matrix.os == 'noble'
-      run: |-
-        docker tag rubylang/ruby:${{ env.ruby_version }}${{ env.image_version_suffix }}${{ env.dev_suffix }}-${{ env.ubuntu_version }} rubylang/ruby:${{ env.ruby_version }}${{ env.image_version_suffix }}${{ env.dev_suffix }}
-        docker push rubylang/ruby:${{ env.ruby_version }}${{ env.image_version_suffix }}${{ env.dev_suffix }}
-        docker tag rubylang/ruby:${{ env.ruby_version }}${{ env.image_version_suffix }}${{ env.dev_suffix }} ghcr.io/ruby/ruby:${{ env.ruby_version }}${{ env.image_version_suffix }}${{ env.dev_suffix }}
-        docker push ghcr.io/ruby/ruby:${{ env.ruby_version }}${{ env.image_version_suffix }}${{ env.dev_suffix }}
+        docker tag ghcr.io/labtec/ruby:${{ env.ruby_version }}${{ env.image_version_suffix }}${{ env.dev_suffix }}-${{ env.freebsd_version }} ghcr.io/labtec/ruby:${{ env.ruby_version }}${{ env.image_version_suffix }}${{ env.dev_suffix }}
+        docker push ghcr.io/labtec/ruby:${{ env.ruby_version }}${{ env.image_version_suffix }}${{ env.dev_suffix }}
+        docker tag ghcr.io/labtec/ruby:${{ env.ruby_version }}${{ env.image_version_suffix }}${{ env.dev_suffix }} ghcr.io/labtec/ruby:${{ env.ruby_version }}${{ env.image_version_suffix }}${{ env.dev_suffix }}
+        docker push ghcr.io/labtec/ruby:${{ env.ruby_version }}${{ env.image_version_suffix }}${{ env.dev_suffix }}
       shell: bash
 
     - uses: ruby/action-slack@v3.2.2

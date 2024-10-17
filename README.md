@@ -1,85 +1,67 @@
-# ruby/ruby-docker-images
+# Labtec/ruby-docker-images
 
-The Dockerfile is available in [this repository](https://github.com/ruby/ruby-docker-images/blob/master/Dockerfile).
+The Dockerfile is available in [this repository](https://github.com/Labtec/ruby-docker-images/blob/master/Dockerfile).
 
 Built images are available here:
 
-* https://hub.docker.com/r/rubylang/ruby/
-* https://github.com/ruby/ruby-docker-images/pkgs/container/ruby
+* https://github.com/Labtec/ruby-docker-images/pkgs/container/ruby
 
 ## What is this?
 
 This repository consists of two kinds of images. One is for production use, and the other is for development.
 
-An image for development is based on the image for production of the same ruby and ubuntu versions and installed development tools such as build-essential and gdb, in addition. It has `-dev` suffix after the version number, like `rubylang/ruby:3.3.0-dev-noble`.
+An image for development is based on the image for production of the same ruby and FreeBSD versions and installed development tools such as lldb, in addition. It has `-dev` suffix after the version number, like `labtec/ruby:3.3.0-dev-15.0`.
 
 The list of image names in this repository is below:
 
 ## Images
 
-### Ubuntu 24.04 (noble)
+### FreeBSD 15.0-CURRENT
 
 - master
-  - rubylang/ruby:master-noble
-  - rubylang/ruby:master-dev-noble
-  - rubylang/ruby:master-debug-noble
-  - rubylang/ruby:master-debug-dev-noble
+  - labtec/ruby:master-15.0
+  - labtec/ruby:master-dev-15.0
+  - labtec/ruby:master-debug-15.0
+  - labtec/ruby:master-debug-dev-15.0
 - 3.3
-  - rubylang/ruby:latest
-  - rubylang/ruby:3.3-noble
-  - rubylang/ruby:3.3.5-noble
+  - labtec/ruby:latest-15.0
+  - labtec/ruby:3.3-15.0
+  - labtec/ruby:3.3.5-15.0
 - 3.2
-  - rubylang/ruby:3.2-noble
-  - rubylang/ruby:3.2.5-noble
+  - labtec/ruby:3.2-15.0
+  - labtec/ruby:3.2.5-15.0
 - 3.1
-  - rubylang/ruby:3.1-noble
-  - rubylang/ruby:3.1.6-noble
+  - labtec/ruby:3.1-15.0
+  - labtec/ruby:3.1.6-15.0
 
-### Ubuntu 22.04 (jammy)
+### FreeBSD 14.2-RELEASE
 
 - master
-  - rubylang/ruby:master-jammy
-  - rubylang/ruby:master-dev-jammy
-  - rubylang/ruby:master-debug-jammy
-  - rubylang/ruby:master-debug-dev-jammy
+  - labtec/ruby:master-14.2
+  - labtec/ruby:master-dev-14.2
+  - labtec/ruby:master-debug-14.2
+  - labtec/ruby:master-debug-dev-14.2
 - 3.3
-  - rubylang/ruby:latest
-  - rubylang/ruby:3.3-jammy
-  - rubylang/ruby:3.3.5-jammy
+  - labtec/ruby:latest-14.2
+  - labtec/ruby:3.3-14.2
+  - labtec/ruby:3.3.5-14.2
 - 3.2
-  - rubylang/ruby:3.2-jammy
-  - rubylang/ruby:3.2.5-jammy
+  - labtec/ruby:3.2-14.2
+  - labtec/ruby:3.2.5-14.2
 - 3.1
-  - rubylang/ruby:3.1-jammy
-  - rubylang/ruby:3.1.6-jammy
-
-### Ubuntu 20.04 (focal)
-
-- master
-  - rubylang/ruby:master-focal
-  - rubylang/ruby:master-dev-focal
-  - rubylang/ruby:master-debug-focal
-  - rubylang/ruby:master-debug-dev-focal
-- 3.3
-  - rubylang/ruby:3.3-focal
-  - rubylang/ruby:3.3.5-focal
-- 3.2
-  - rubylang/ruby:3.2-focal
-  - rubylang/ruby:3.2.5-focal
-- 3.1
-  - rubylang/ruby:3.1-focal
-  - rubylang/ruby:3.1.6-focal
+  - labtec/ruby:3.1-14.2
+  - labtec/ruby:3.1.6-14.2
 
 ### Misc
 
 We have some other images for special purposes.
 
-- Preview or Release-candidate versions (e.g. `rubylang/ruby:2.7.0-preview1-jammy`)
-- Nightly built master (e.g. `rubylang/ruby:master-nightly-jammy`)
-- Nightly debug built master (e.g. `rubylang/ruby:master-debug-nightly-jammy`)
-- EOL versions (e.g. `rubylang/ruby:2.4.10-jammy`)
+- Preview or Release-candidate versions (e.g. `labtec/ruby:2.7.0-preview1-14.2`)
+- Nightly built master (e.g. `labtec/ruby:master-nightly-14.2`)
+- Nightly debug built master (e.g. `labtec/ruby:master-debug-nightly-14.2`)
+- EOL versions (e.g. `labtec/ruby:2.4.10-14.2`)
 
-All the images are based on `ubuntu:jammy`, and made from just doing `make install` and installing bundler.
+All the images are based on `freebsd:14.2`, and made from just doing `make install` and installing bundler.
 
 ## How to build images
 
@@ -93,15 +75,15 @@ You can specify the specific revision in the master branch like:
 rake docker:build ruby_version=master:ce798d08de
 ```
 
-## Build and push for the specific ruby and ubuntu versions
+## Build and push for the specific ruby and FreeBSD versions
 
-Trigger CircleCI workflow with `ruby_version` and `ubuntu_version` pipeline parameters.
+Trigger GitHub Actions workflow with `ruby_version` and `freebsd_version` pipeline parameters.
 Nightly build workflow is triggered if the workflow triggered with `ruby_version` of `"nightly"`.
-The nightly build workflow only builds images of linux/amd64 platform.
+The nightly build workflow only builds images of FreeBSD/amd64 platform.
 
 ## Nightly build workflow
 
-Nightly build workflow is performed by CircleCI's scheduled pipeline system.
+Nightly build workflow is performed by GitHub Action's scheduled pipeline system.
 The build is triggered at 16:00 UTC (01:00 JST) every night.
 
 ## Author

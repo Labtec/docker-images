@@ -3,48 +3,47 @@ ARG RUBY_VERSION
 ARG RUBY_SO_SUFFIX
 
 ### build ###
-FROM ubuntu:$BASE_IMAGE_TAG AS build
+FROM ghcr.io/labtec/freebsd:$BASE_IMAGE_TAG AS build
 
 ARG BASE_IMAGE_TAG
 ARG RUBY_VERSION
 
 ENV LANG C.UTF-8
-ENV DEBIAN_FRONTEND noninteractive
+ENV ASSUME_ALWAYS_YES yes
 
 RUN set -ex && \
-    apt-get update && \
-    apt-get install -y --no-install-recommends \
+    pkg update && \
+    pkg install -y \
             autoconf \
             bison \
-            ca-certificates \
-            dpkg-dev \
+            ca_root_nss \
+            pkgconf \
             gcc \
             git \
-            g++ \
-            libffi-dev \
-            libgdbm-dev \
-            libgmp-dev \
-            libncurses5-dev \
-            libreadline-dev \
-            libssl-dev \
-            libyaml-dev \
-            make \
+            libffi \
+            gdbm \
+            gmp \
+            ncurses \
+            readline \
+            openssl31 \
+            libyaml \
+            gmake \
             ruby \
-            rustc \
-            tzdata \
+            rust \
             wget \
-            xz-utils \
-            zlib1g-dev \
+            zutils \
+            bash \
             && \
-    apt-get clean && \
-    rm -r /var/lib/apt/lists/*
+    pkg clean -ay && \
+    rm -fr /var/cache/pkg && \
+    rm -fr /var/db/pkg/repos
 
 COPY tmp/ruby /usr/src/ruby
 COPY install_ruby.sh /tmp/
 
 RUN set -ex && \
     RUBY_VERSION=3.2.3 PREFIX=/root /tmp/install_ruby.sh
-RUN apt purge -y --auto-remove ruby
+RUN pkg delete -y ruby
 COPY tmp/ruby /usr/src/ruby
 
 ARG optflags
@@ -62,51 +61,47 @@ RUN set -ex && \
     PATH=/root/bin:$PATH /tmp/install_ruby.sh
 
 ### ruby ###
-FROM ubuntu:$BASE_IMAGE_TAG AS ruby
+FROM ghcr.io/labtec/freebsd:$BASE_IMAGE_TAG AS ruby
 
 ARG BASE_IMAGE_TAG
 ARG RUBY_VERSION
 ARG RUBY_SO_SUFFIX
 
 ENV LANG C.UTF-8
-ENV DEBIAN_FRONTEND noninteractive
+ENV ASSUME_ALWAYS_YES yes
 
 RUN set -ex && \
-    apt-get update && \
-    apt-get install -y --no-install-recommends \
-            ca-certificates \
-            libffi-dev \
-            libgdbm-dev \
-            libgmp-dev \
-            libncurses5-dev \
-            libreadline-dev \
-            libssl-dev \
-            libyaml-dev \
-            tzdata \
-            zlib1g-dev \
+    pkg update && \
+    pkg install -y \
+            ca_root_nss \
+            libffi \
+            gdbm \
+            gmp \
+            ncurses \
+            readline \
+            openssl31 \
+            libyaml \
+            bash \
+            pkgconf \
             && \
-    dpkg-query --show --showformat '${package}\n' \
-      | grep -P '^(lib(ffi|gdbm|gmp|ncurses|readline|ssl|yaml)|zlib)' \
-      | grep -v -P -- '-dev$' \
-      | xargs apt-mark manual \
+    pkg info -x \
+      '^(libffi|gdbm|gmp|ncurses|readline|openssl31|libyaml)' \
+      | xargs pkg set -A 0 \
       && \
-    apt-get purge -y --auto-remove \
-            libffi-dev \
-            libgdbm-dev \
-            libgmp-dev \
-            libncurses5-dev \
-            libreadline-dev \
-            libssl-dev \
-            libyaml-dev \
-            zlib1g-dev \
+    pkg check -s -a \
             && \
-    \
-    apt-get clean && rm -r /var/lib/apt/lists/*
+    pkg autoremove -y \
+            && \
+    pkg clean -ay && rm -fr /var/cache/pkg && rm -fr /var/db/pkg/repos
 
 RUN set -ex && \
-    if ! (id ubuntu &>/dev/null); then \
-        useradd -ms /bin/bash ubuntu; \
+    if (id root &>/dev/null); then \
+        chsh -s /usr/local/bin/bash; \
     fi
+    # XXX FreeBSD only has rootful containers
+    # if ! (id freebsd &>/dev/null); then \
+    #     adduser -s /usr/local/bin/bash freebsd; \
+    # fi
 
 RUN mkdir -p /usr/local/etc
 
@@ -139,7 +134,7 @@ COPY --from=build \
      /usr/local/lib/
 
 RUN set -ex && \
-    RUBY_SO_SUFFIX_MM=$(echo ${RUBY_SO_SUFFIX:-$RUBY_VERSION} | sed -e 's/\.[^.]\+$//') && \
+    RUBY_SO_SUFFIX_MM=$(echo ${RUBY_SO_SUFFIX:-$RUBY_VERSION} | sed -e 's/\.[^.]*$//') && \
     ln -sf libruby.so.${RUBY_SO_SUFFIX:-$RUBY_VERSION} /usr/local/lib/libruby.so.${RUBY_SO_SUFFIX_MM} && \
     ln -sf libruby.so.${RUBY_SO_SUFFIX:-$RUBY_VERSION} /usr/local/lib/libruby.so
 
@@ -163,10 +158,9 @@ COPY --from=build \
 FROM ruby AS development
 
 RUN set -ex && \
-    apt-get update && \
-    apt-get install -y --no-install-recommends \
-            build-essential \
-            pkg-config \
+    pkg update && \
+    pkg install -y \
+            pkgconf \
             curl \
             gdb \
             git \
@@ -174,5 +168,6 @@ RUN set -ex && \
             lv \
             wget \
             && \
-    apt-get clean && \
-    rm -r /var/lib/apt/lists/*
+    pkg clean -ay && \
+    rm -fr /var/cache/pkg && \
+    rm -fr /var/db/pkg/repos
